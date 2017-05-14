@@ -62,19 +62,18 @@ namespace OpenSim.Framework
 
         public void Add(TKey1 key1, TKey2 key2, TValue value)
         {
-            try {}
-            finally
+            bool gotLock = false;
+
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterWriteLock();
-                try
+                try {}
+                finally
                 {
+                    rwLock.EnterWriteLock();
+                    gotLock = true;
                     if (Dictionary1.ContainsKey(key1))
                     {
                         if (!Dictionary2.ContainsKey(key2))
@@ -85,42 +84,40 @@ namespace OpenSim.Framework
                         if (!Dictionary1.ContainsKey(key1))
                             throw new ArgumentException("key2 exists in the dictionary but not key1");
                     }
-
                     Dictionary1[key1] = value;
                     Dictionary2[key2] = value;
                 }
-                finally
-                {
+            }
+            finally
+            {
+                if (gotLock)
                     rwLock.ExitWriteLock();
-                }
             }
         }
 
         public bool Remove(TKey1 key1, TKey2 key2)
         {
             bool success;
+            bool gotLock = false;
 
-            try {}
-            finally
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterWriteLock();
-                try
+                try {}
+                finally
                 {
-
+                    rwLock.EnterWriteLock();
+                    gotLock = true;
                     Dictionary1.Remove(key1);
                     success = Dictionary2.Remove(key2);
                 }
-                finally
-                {
+            }
+            finally
+            {
+                if (gotLock)
                     rwLock.ExitWriteLock();
-                }
             }
 
             return success;
@@ -129,40 +126,44 @@ namespace OpenSim.Framework
         public bool Remove(TKey1 key1)
         {
             bool found = false;
+            bool gotLock = false;
 
-            try {}
-            finally
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterWriteLock();
-                try
+                try {}
+                finally
                 {
-                    // This is an O(n) operation!
-                    TValue value;
-                    if (Dictionary1.TryGetValue(key1, out value))
+                    rwLock.EnterWriteLock();
+                    gotLock = true;
+                }
+
+                // This is an O(n) operation!
+                TValue value;
+                if (Dictionary1.TryGetValue(key1, out value))
+                {
+                    foreach (KeyValuePair<TKey2, TValue> kvp in Dictionary2)
                     {
-                        foreach (KeyValuePair<TKey2, TValue> kvp in Dictionary2)
+                        if (kvp.Value.Equals(value))
                         {
-                            if (kvp.Value.Equals(value))
+                            try { }
+                            finally
                             {
                                 Dictionary1.Remove(key1);
                                 Dictionary2.Remove(kvp.Key);
-                                found = true;
-                                break;
                             }
+                            found = true;
+                            break;
                         }
                     }
                 }
-                finally
-                {
+            }
+            finally
+            {
+                if (gotLock)
                     rwLock.ExitWriteLock();
-                }
             }
 
             return found;
@@ -171,40 +172,44 @@ namespace OpenSim.Framework
         public bool Remove(TKey2 key2)
         {
             bool found = false;
+            bool gotLock = false;
 
-            try {}
-            finally
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterWriteLock();
-                try
+                try {}
+                finally
                 {
-                    // This is an O(n) operation!
-                    TValue value;
-                    if (Dictionary2.TryGetValue(key2, out value))
+                    rwLock.EnterWriteLock();
+                    gotLock = true;
+                }
+
+                // This is an O(n) operation!
+                TValue value;
+                if (Dictionary2.TryGetValue(key2, out value))
+                {
+                    foreach (KeyValuePair<TKey1, TValue> kvp in Dictionary1)
                     {
-                        foreach (KeyValuePair<TKey1, TValue> kvp in Dictionary1)
+                        if (kvp.Value.Equals(value))
                         {
-                            if (kvp.Value.Equals(value))
+                            try { }
+                            finally
                             {
                                 Dictionary2.Remove(key2);
                                 Dictionary1.Remove(kvp.Key);
-                                found = true;
-                                break;
                             }
+                            found = true;
+                            break;
                         }
                     }
                 }
-                finally
-                {
+            }
+            finally
+            {
+                if (gotLock)
                     rwLock.ExitWriteLock();
-                }
             }
 
             return found;
@@ -212,26 +217,26 @@ namespace OpenSim.Framework
 
         public void Clear()
         {
-            try {}
-            finally
+            bool gotLock = false;
+
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterWriteLock();
-                try
+                try {}
+                finally
                 {
+                    rwLock.EnterWriteLock();
+                    gotLock = true;
                     Dictionary1.Clear();
                     Dictionary2.Clear();
                 }
-                finally
-                {
+            }
+            finally
+            {
+                if (gotLock)
                     rwLock.ExitWriteLock();
-                }
             }
         }
 
@@ -253,26 +258,26 @@ namespace OpenSim.Framework
         public bool TryGetValue(TKey1 key, out TValue value)
         {
             bool success;
+            bool gotLock = false;
 
-            try {}
-            finally
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterReadLock();
-                try
-                {
-                    success = Dictionary1.TryGetValue(key, out value);
-                }
+                try {}
                 finally
                 {
-                    rwLock.ExitReadLock();
+                    rwLock.EnterReadLock();
+                    gotLock = true;
                 }
+
+                success = Dictionary1.TryGetValue(key, out value);
+            }
+            finally
+            {
+                if (gotLock)
+                    rwLock.ExitReadLock();
             }
 
             return success;
@@ -281,26 +286,26 @@ namespace OpenSim.Framework
         public bool TryGetValue(TKey2 key, out TValue value)
         {
             bool success;
+            bool gotLock = false;
 
-            try {}
-            finally
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterReadLock();
-                try
-                {
-                    success = Dictionary2.TryGetValue(key, out value);
-                }
+                try {}
                 finally
                 {
-                    rwLock.ExitReadLock();
+                    rwLock.EnterReadLock();
+                    gotLock = true;
                 }
+
+                success = Dictionary2.TryGetValue(key, out value);
+            }
+            finally
+            {
+                if (gotLock)
+                    rwLock.ExitReadLock();
             }
 
             return success;
@@ -308,140 +313,140 @@ namespace OpenSim.Framework
 
         public void ForEach(Action<TValue> action)
         {
-            try {}
-            finally
+            bool gotLock = false;
+
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterReadLock();
-                try
-                {
-                    foreach (TValue value in Dictionary1.Values)
-                        action(value);
-                }
+                try {}
                 finally
                 {
-                    rwLock.ExitReadLock();
+                    rwLock.EnterReadLock();
+                    gotLock = true;
                 }
+
+                foreach (TValue value in Dictionary1.Values)
+                    action(value);
+            }
+            finally
+            {
+                if (gotLock)
+                    rwLock.ExitReadLock();
             }
         }
 
         public void ForEach(Action<KeyValuePair<TKey1, TValue>> action)
         {
-            try {}
-            finally
+            bool gotLock = false;
+
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterReadLock();
-                try
-                {
-                    foreach (KeyValuePair<TKey1, TValue> entry in Dictionary1)
-                        action(entry);
-                }
+                try {}
                 finally
                 {
-                    rwLock.ExitReadLock();
+                    rwLock.EnterReadLock();
+                    gotLock = true;
                 }
+
+                foreach (KeyValuePair<TKey1, TValue> entry in Dictionary1)
+                    action(entry);
+            }
+            finally
+            {
+                if (gotLock)
+                    rwLock.ExitReadLock();
             }
         }
 
         public void ForEach(Action<KeyValuePair<TKey2, TValue>> action)
         {
-            try {}
-            finally
+            bool gotLock = false;
+
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterReadLock();
-                try
-                {
-                    foreach (KeyValuePair<TKey2, TValue> entry in Dictionary2)
-                        action(entry);
-                }
+                try {}
                 finally
                 {
-                    rwLock.ExitReadLock();
+                    rwLock.EnterReadLock();
+                    gotLock = true;
                 }
+
+                foreach (KeyValuePair<TKey2, TValue> entry in Dictionary2)
+                    action(entry);
+            }
+            finally
+            {
+                if (gotLock)
+                    rwLock.ExitReadLock();
             }
         }
 
         public TValue FindValue(Predicate<TValue> predicate)
         {
-            TValue ret = default(TValue);
+            bool gotLock = false;
 
-            try {}
-            finally
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterReadLock();
-                try
-                {
-                    foreach (TValue value in Dictionary1.Values)
-                    {
-                        if (predicate(value))
-                        {
-                            ret = value;
-                            break;
-                        }
-                    }
-                }
+                try {}
                 finally
                 {
-                    rwLock.ExitReadLock();
+                    rwLock.EnterReadLock();
+                    gotLock = true;
+                }
+
+                foreach (TValue value in Dictionary1.Values)
+                {
+                    if (predicate(value))
+                        return value;
                 }
             }
+            finally
+            {
+                if (gotLock)
+                    rwLock.ExitReadLock();
+            }
 
-            return ret;
+            return default(TValue);
         }
 
         public IList<TValue> FindAll(Predicate<TValue> predicate)
         {
             IList<TValue> list = new List<TValue>();
-            try {}
-            finally
+            bool gotLock = false;
+
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterReadLock();
-                try
-                {
-                    foreach (TValue value in Dictionary1.Values)
-                    {
-                        if (predicate(value))
-                            list.Add(value);
-                    }
-                }
+                try {}
                 finally
                 {
-                    rwLock.ExitReadLock();
+                    rwLock.EnterReadLock();
+                    gotLock = true;
                 }
+
+                foreach (TValue value in Dictionary1.Values)
+                {
+                    if (predicate(value))
+                        list.Add(value);
+                }
+            }
+            finally
+            {
+                if (gotLock)
+                    rwLock.ExitReadLock();
             }
 
             return list;
@@ -450,60 +455,60 @@ namespace OpenSim.Framework
         public int RemoveAll(Predicate<TValue> predicate)
         {
             IList<TKey1> list = new List<TKey1>();
+            bool gotUpgradeableLock = false;
 
-            try {}
-            finally
+            try
             {
                 // Avoid an asynchronous Thread.Abort() from possibly never existing an acquired lock by placing
                 // the acquision inside the main try.  The inner finally block is needed because thread aborts cannot
                 // interrupt code in these blocks (hence gotLock is guaranteed to be set correctly).
-                //
-                // Comment: The above statement leads to an easier way to do this without needing a boolean.
-                // Just place all code in a finally{} block. 
-                // To enticipate exceptions use a 2nd try-finally to ensure releasing the lock.
-                rwLock.EnterUpgradeableReadLock();
+                try {}
+                finally
+                {
+                    rwLock.EnterUpgradeableReadLock();
+                    gotUpgradeableLock = true;
+                }
+
+                foreach (KeyValuePair<TKey1, TValue> kvp in Dictionary1)
+                {
+                    if (predicate(kvp.Value))
+                        list.Add(kvp.Key);
+                }
+
+                IList<TKey2> list2 = new List<TKey2>(list.Count);
+                foreach (KeyValuePair<TKey2, TValue> kvp in Dictionary2)
+                {
+                    if (predicate(kvp.Value))
+                        list2.Add(kvp.Key);
+                }
+
+                bool gotWriteLock = false;
 
                 try
                 {
-
-                    foreach (KeyValuePair<TKey1, TValue> kvp in Dictionary1)
-                    {
-                        if (predicate(kvp.Value))
-                            list.Add(kvp.Key);
-                    }
-
-                    IList<TKey2> list2 = new List<TKey2>(list.Count);
-                    foreach (KeyValuePair<TKey2, TValue> kvp in Dictionary2)
-                    {
-                        if (predicate(kvp.Value))
-                            list2.Add(kvp.Key);
-                    }
-
                     try {}
                     finally
                     {
-                        // rwLock.EnterUpgradeableReadLock(); 
-                        // This should be the write lock.
                         rwLock.EnterWriteLock();
-                        try
-                        {
+                        gotWriteLock = true;
 
-                            for (int i = 0; i < list.Count; i++)
-                                Dictionary1.Remove(list[i]);
+                        for (int i = 0; i < list.Count; i++)
+                            Dictionary1.Remove(list[i]);
 
-                            for (int i = 0; i < list2.Count; i++)
-                                Dictionary2.Remove(list2[i]);
-                        }
-                        finally
-                        {
-                            rwLock.ExitWriteLock();
-                        }
+                        for (int i = 0; i < list2.Count; i++)
+                            Dictionary2.Remove(list2[i]);
                     }
                 }
                 finally
                 {
-                    rwLock.ExitUpgradeableReadLock();
+                    if (gotWriteLock)
+                        rwLock.ExitWriteLock();
                 }
+            }
+            finally
+            {
+                if (gotUpgradeableLock)
+                    rwLock.ExitUpgradeableReadLock();
             }
 
             return list.Count;
