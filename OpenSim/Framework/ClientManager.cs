@@ -79,18 +79,34 @@ namespace OpenSim.Framework
                 if (m_dict1.ContainsKey(value.AgentId) || m_dict2.ContainsKey(value.RemoteEndPoint))
                     return false;
 
-                m_dict1[value.AgentId] = value;
-                m_dict2[value.RemoteEndPoint] = value;
+                try { }
+                finally 
+                {
+                    // Do all this in a finally{} block to prevent it being aborted before
+                    // it is completed
 
-                IClientAPI[] oldArray = m_array;
-                int oldLength = oldArray.Length;
+                    m_dict1[value.AgentId] = value;
+                    m_dict2[value.RemoteEndPoint] = value;
 
-                IClientAPI[] newArray = new IClientAPI[oldLength + 1];
-                for (int i = 0; i < oldLength; i++)
-                    newArray[i] = oldArray[i];
-                newArray[oldLength] = value;
+                    /*
+                    IClientAPI[] oldArray = m_array;
+                    int oldLength = oldArray.Length;
 
-                m_array = newArray;
+                    IClientAPI[] newArray = new IClientAPI[oldLength + 1];
+                    for (int i = 0; i < oldLength; i++)
+                        newArray[i] = oldArray[i];
+                    newArray[oldLength] = value;
+                    */
+
+                    int oldLength = m_array.Length;
+
+                    IClientAPI[] newArray = new IClientAPI[oldLength + 1];
+                    for (int i = 0; i < oldLength; i++)
+                        newArray[i] = m_array[i];
+                    newArray[oldLength] = value;
+
+                    m_array = newArray;
+                }
             }
 
             return true;
@@ -109,21 +125,35 @@ namespace OpenSim.Framework
                 IClientAPI value;
                 if (m_dict1.TryGetValue(key, out value))
                 {
-                    m_dict1.Remove(key);
-                    m_dict2.Remove(value.RemoteEndPoint);
-
-                    IClientAPI[] oldArray = m_array;
-                    int oldLength = oldArray.Length;
-
-                    IClientAPI[] newArray = new IClientAPI[oldLength - 1];
-                    int j = 0;
-                    for (int i = 0; i < oldLength; i++)
+                    try { }
+                    finally
                     {
-                        if (oldArray[i] != value)
-                            newArray[j++] = oldArray[i];
-                    }
+                        // Do all this in a finally{} block to prevent it being aborted before
+                        // it is completed
 
-                    m_array = newArray;
+                        m_dict1.Remove(key);
+                        m_dict2.Remove(value.RemoteEndPoint);
+
+                        int newLength = m_array.Length - 1;
+                        IClientAPI[] newArray = new IClientAPI[newLength];
+                        for (int i = 0; i < newLength; i++)
+                        {
+                            if (m_array[i] == value)
+                            {
+                                // Replace the value that you want to remove
+                                // with last value of the old array. 
+                                // If the value you want to remove is actually
+                                // the last value in the old array then the 
+                                // if-statement would never be True in this loop
+                                // since the loop doesn't go to the end of the old array.
+                                // And if newLength=0 the for-loop gets skipped.
+                                newArray[i] = m_array[newLength];
+                                continue;
+                            }
+                            newArray[i] = m_array[i];
+                        }
+                        m_array = newArray;
+                    }
                     return true;
                 }
             }
@@ -138,9 +168,15 @@ namespace OpenSim.Framework
         {
             lock (m_syncRoot)
             {
-                m_dict1.Clear();
-                m_dict2.Clear();
-                m_array = new IClientAPI[0];
+                try { }
+                finally
+                {
+                    // Do all this in a finally{} block to prevent it being aborted before
+                    // it is completed
+                    m_dict1.Clear();
+                    m_dict2.Clear();
+                    m_array = new IClientAPI[0];
+                }
             }
         }
 

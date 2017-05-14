@@ -73,15 +73,11 @@ namespace OpenSim
             // First line, hook the appdomain to the crash reporter
             AppDomain.CurrentDomain.UnhandledException +=
                 new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
-
-            /*
+            
             if(Util.IsWindows())
                 ServicePointManager.DefaultConnectionLimit = 32;
             else
                 ServicePointManager.DefaultConnectionLimit = 12;
-            */
-
-            ServicePointManager.DefaultConnectionLimit = 128;
 
             ServicePointManager.Expect100Continue = false;
             ServicePointManager.UseNagleAlgorithm = false;

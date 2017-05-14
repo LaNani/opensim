@@ -54,7 +54,7 @@ namespace OpenSim.Server
 
         public static int Main(string[] args)
         {
-            ServicePointManager.DefaultConnectionLimit = 128;
+            ServicePointManager.DefaultConnectionLimit = 64;
             ServicePointManager.Expect100Continue = false;
             ServicePointManager.UseNagleAlgorithm = false;
 
