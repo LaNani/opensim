@@ -88,16 +88,6 @@ namespace OpenSim.Framework
                     m_dict1[value.AgentId] = value;
                     m_dict2[value.RemoteEndPoint] = value;
 
-                    /*
-                    IClientAPI[] oldArray = m_array;
-                    int oldLength = oldArray.Length;
-
-                    IClientAPI[] newArray = new IClientAPI[oldLength + 1];
-                    for (int i = 0; i < oldLength; i++)
-                        newArray[i] = oldArray[i];
-                    newArray[oldLength] = value;
-                    */
-
                     int oldLength = m_array.Length;
 
                     IClientAPI[] newArray = new IClientAPI[oldLength + 1];
