@@ -46,9 +46,6 @@ namespace OpenSim.Framework
         /// <summary>A dictionary mapping from <seealso cref="IPEndPoint"/>
         /// to <seealso cref="IClientAPI"/> references</summary>
         private Dictionary<IPEndPoint, IClientAPI> m_dict2;
-        /// <summary>An immutable collection of <seealso cref="IClientAPI"/>
-        /// references</summary>
-        private IClientAPI[] m_array;
         /// <summary>Synchronization object for writing to the collections</summary>
         private object m_syncRoot = new object();
 
@@ -62,7 +59,6 @@ namespace OpenSim.Framework
         {
             m_dict1 = new Dictionary<UUID, IClientAPI>();
             m_dict2 = new Dictionary<IPEndPoint, IClientAPI>();
-            m_array = new IClientAPI[0];
         }
 
         /// <summary>
@@ -79,24 +75,15 @@ namespace OpenSim.Framework
                 if (m_dict1.ContainsKey(value.AgentId) || m_dict2.ContainsKey(value.RemoteEndPoint))
                     return false;
 
-                try { }
-                finally 
-                {
-                    // Do all this in a finally{} block to prevent it being aborted before
-                    // it is completed
+                // Make a new dictionary that is a copy of the old one.
+                // Add the value to the new dictionary,
+                // Do NOT alter the old dictionairy so you will not break the
+                // enumeration in ForEach() and ForEachSync().
+                Dictionary<UUID, IClientAPI> newDict = new Dictionary<UUID, IClientAPI>(m_dict1);
+                newDict[value.AgentId] = value;
 
-                    m_dict1[value.AgentId] = value;
-                    m_dict2[value.RemoteEndPoint] = value;
-
-                    int oldLength = m_array.Length;
-
-                    IClientAPI[] newArray = new IClientAPI[oldLength + 1];
-                    for (int i = 0; i < oldLength; i++)
-                        newArray[i] = m_array[i];
-                    newArray[oldLength] = value;
-
-                    m_array = newArray;
-                }
+                m_dict2[value.RemoteEndPoint] = value;
+                m_dict1 = newDict;
             }
 
             return true;
@@ -115,35 +102,15 @@ namespace OpenSim.Framework
                 IClientAPI value;
                 if (m_dict1.TryGetValue(key, out value))
                 {
-                    try { }
-                    finally
-                    {
-                        // Do all this in a finally{} block to prevent it being aborted before
-                        // it is completed
+                    // Make a new dictionary that is a copy of the old one.
+                    // Remove the value from the new dictionary,
+                    // Do NOT alter the old dictionairy so you will not break the
+                    // enumeration in ForEach() and ForEachSync().
+                    Dictionary<UUID, IClientAPI > newDict = new Dictionary<UUID, IClientAPI>(m_dict1);
+                    newDict.Remove(key);
 
-                        m_dict1.Remove(key);
-                        m_dict2.Remove(value.RemoteEndPoint);
-
-                        int newLength = m_array.Length - 1;
-                        IClientAPI[] newArray = new IClientAPI[newLength];
-                        for (int i = 0; i < newLength; i++)
-                        {
-                            if (m_array[i] == value)
-                            {
-                                // Replace the value that you want to remove
-                                // with last value of the old array. 
-                                // If the value you want to remove is actually
-                                // the last value in the old array then the 
-                                // if-statement would never be True in this loop
-                                // since the loop doesn't go to the end of the old array.
-                                // And if newLength=0 the for-loop gets skipped.
-                                newArray[i] = m_array[newLength];
-                                continue;
-                            }
-                            newArray[i] = m_array[i];
-                        }
-                        m_array = newArray;
-                    }
+                    m_dict2.Remove(value.RemoteEndPoint);
+                    m_dict1 = newDict;
                     return true;
                 }
             }
@@ -158,15 +125,8 @@ namespace OpenSim.Framework
         {
             lock (m_syncRoot)
             {
-                try { }
-                finally
-                {
-                    // Do all this in a finally{} block to prevent it being aborted before
-                    // it is completed
-                    m_dict1.Clear();
-                    m_dict2.Clear();
-                    m_array = new IClientAPI[0];
-                }
+                m_dict1.Clear();
+                m_dict2.Clear();
             }
         }
 
@@ -221,21 +181,7 @@ namespace OpenSim.Framework
                 return false;
             }
         }
-
-        /// <summary>
-        /// Performs a given task in parallel for each of the elements in the
-        /// collection
-        /// </summary>
-        /// <param name="action">Action to perform on each element</param>
-        public void ForEach(Action<IClientAPI> action)
-        {
-            IClientAPI[] localArray = m_array;
-            Parallel.For(0, localArray.Length,
-                delegate(int i)
-                { action(localArray[i]); }
-            );
-        }
-
+  
         /// <summary>
         /// Performs a given task synchronously for each of the elements in
         /// the collection
@@ -243,9 +189,11 @@ namespace OpenSim.Framework
         /// <param name="action">Action to perform on each element</param>
         public void ForEachSync(Action<IClientAPI> action)
         {
-            IClientAPI[] localArray = m_array;
-            for (int i = 0; i < localArray.Length; i++)
-                action(localArray[i]);
+            Dictionary<UUID, IClientAPI> localDict = m_dict1;
+            foreach (IClientAPI value in localDict.Values)
+            {
+                action(value);
+            }
         }
     }
 }

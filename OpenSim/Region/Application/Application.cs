@@ -73,7 +73,7 @@ namespace OpenSim
             // First line, hook the appdomain to the crash reporter
             AppDomain.CurrentDomain.UnhandledException +=
                 new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
-            
+
             if(Util.IsWindows())
                 ServicePointManager.DefaultConnectionLimit = 32;
             else
@@ -115,10 +115,10 @@ namespace OpenSim
             // Max IO Completion threads are 1000 on all 3 CLRs
             //
             // Mono 2.10.9 to at least Mono 3.1, workerthreads default to 100 * numcores, iocp threads to 4 * numcores
-            int workerThreadsMin = 512;
-            int workerThreadsMax = 1024; // may need further adjustment to match other CLR
-            int iocpThreadsMin = 1024;
-            int iocpThreadsMax = 2048; // may need further adjustment to match other CLR
+            int workerThreadsMin = 500;
+            int workerThreadsMax = 1000; // may need further adjustment to match other CLR
+            int iocpThreadsMin = 1000;
+            int iocpThreadsMax = 2000; // may need further adjustment to match other CLR
 
             {
                 int currentMinWorkerThreads, currentMinIocpThreads;
