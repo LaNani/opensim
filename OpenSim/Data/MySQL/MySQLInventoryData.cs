@@ -347,7 +347,8 @@ namespace OpenSim.Data.MySQL
                     {
                         dbcon.Open();
 
-                        using (MySqlCommand result = new MySqlCommand("SELECT * FROM inventoryitems WHERE inventoryID = ?uuid", dbcon))
+                        using (MySqlCommand result = new MySqlCommand(
+                            "SELECT * FROM inventoryitems WHERE inventoryID = ?uuid", dbcon))
                         {
                             result.Parameters.AddWithValue("?uuid", itemID.ToString());
 
@@ -413,7 +414,8 @@ namespace OpenSim.Data.MySQL
                     {
                         dbcon.Open();
 
-                        using (MySqlCommand result = new MySqlCommand("SELECT * FROM inventoryfolders WHERE folderID = ?uuid", dbcon))
+                        using (MySqlCommand result = new MySqlCommand(
+                            "SELECT * FROM inventoryfolders WHERE folderID = ?uuid", dbcon))
                         {
                             result.Parameters.AddWithValue("?uuid", folderID.ToString());
 
@@ -443,12 +445,11 @@ namespace OpenSim.Data.MySQL
         /// <param name="item">The inventory item</param>
         public void addInventoryItem(InventoryItemBase item)
         {
-            string sql =
+            const string sql =
                 "REPLACE INTO inventoryitems (inventoryID, assetID, assetType, parentFolderID, avatarID, inventoryName"
                     + ", inventoryDescription, inventoryNextPermissions, inventoryCurrentPermissions, invType"
                     + ", creatorID, inventoryBasePermissions, inventoryEveryOnePermissions, inventoryGroupPermissions, salePrice, saleType"
-                    + ", creationDate, groupID, groupOwned, flags) VALUES ";
-            sql +=
+                    + ", creationDate, groupID, groupOwned, flags) VALUES " +
                 "(?inventoryID, ?assetID, ?assetType, ?parentFolderID, ?avatarID, ?inventoryName, ?inventoryDescription"
                     + ", ?inventoryNextPermissions, ?inventoryCurrentPermissions, ?invType, ?creatorID"
                     + ", ?inventoryBasePermissions, ?inventoryEveryOnePermissions, ?inventoryGroupPermissions, ?salePrice, ?saleType, ?creationDate"
@@ -504,7 +505,8 @@ namespace OpenSim.Data.MySQL
                         result.Dispose();
                     }
 
-                    using (MySqlCommand result = new MySqlCommand("update inventoryfolders set version=version+1 where folderID = ?folderID", dbcon))
+                    using (MySqlCommand result = new MySqlCommand(
+                        "update inventoryfolders set version=version+1 where folderID = ?folderID", dbcon))
                     {
                         result.Parameters.AddWithValue("?folderID", item.Folder.ToString());
 
@@ -541,7 +543,8 @@ namespace OpenSim.Data.MySQL
                 {
                     dbcon.Open();
 
-                    using (MySqlCommand cmd = new MySqlCommand("DELETE FROM inventoryitems WHERE inventoryID=?uuid", dbcon))
+                    using (MySqlCommand cmd = new MySqlCommand(
+                        "DELETE FROM inventoryitems WHERE inventoryID=?uuid", dbcon))
                     {
                         cmd.Parameters.AddWithValue("?uuid", itemID.ToString());
 
@@ -573,9 +576,9 @@ namespace OpenSim.Data.MySQL
         /// <param name="folder">Folder to create</param>
         public void addInventoryFolder(InventoryFolderBase folder)
         {
-            string sql =
-                "REPLACE INTO inventoryfolders (folderID, agentID, parentFolderID, folderName, type, version) VALUES ";
-            sql += "(?folderID, ?agentID, ?parentFolderID, ?folderName, ?type, ?version)";
+            const string sql =
+                "REPLACE INTO inventoryfolders (folderID, agentID, parentFolderID, folderName, type, version) VALUES "
+                + "(?folderID, ?agentID, ?parentFolderID, ?folderName, ?type, ?version)";
 
             string folderName = folder.Name;
             if (folderName.Length > 64)
@@ -629,7 +632,7 @@ namespace OpenSim.Data.MySQL
         /// <remarks>UPDATE inventoryfolders SET parentFolderID=?parentFolderID WHERE folderID=?folderID</remarks>
         public void moveInventoryFolder(InventoryFolderBase folder)
         {
-            string sql =
+            const string sql =
                 "UPDATE inventoryfolders SET parentFolderID=?parentFolderID WHERE folderID=?folderID";
 
             using (MySqlConnection dbcon = new MySqlConnection(m_connectionString))
@@ -709,7 +712,8 @@ namespace OpenSim.Data.MySQL
 
                         /* Fetch the parent folder from the database to determine the agent ID, and if
                          * we're querying the root of the inventory folder tree */
-                        using (MySqlCommand result = new MySqlCommand("SELECT * FROM inventoryfolders WHERE folderID = ?uuid", dbcon))
+                        using (MySqlCommand result = new MySqlCommand(
+                            "SELECT * FROM inventoryfolders WHERE folderID = ?uuid", dbcon))
                         {
                             result.Parameters.AddWithValue("?uuid", parentID.ToString());
 
@@ -726,7 +730,8 @@ namespace OpenSim.Data.MySQL
                             if (parentFolder[0].ParentID == UUID.Zero) // We are querying the root folder
                             {
                                 /* Get all of the agent's folders from the database, put them in a list and return it */
-                                using (MySqlCommand result = new MySqlCommand("SELECT * FROM inventoryfolders WHERE agentID = ?uuid", dbcon))
+                                using (MySqlCommand result = new MySqlCommand(
+                                    "SELECT * FROM inventoryfolders WHERE agentID = ?uuid", dbcon))
                                 {
                                     result.Parameters.AddWithValue("?uuid", parentFolder[0].Owner.ToString());
 
@@ -745,7 +750,8 @@ namespace OpenSim.Data.MySQL
                             {
                                 /* Get all of the agent's folders from the database, put them all in a hash table
                                  * indexed by their parent ID */
-                                using (MySqlCommand result = new MySqlCommand("SELECT * FROM inventoryfolders WHERE agentID = ?uuid", dbcon))
+                                using (MySqlCommand result = new MySqlCommand(
+                                    "SELECT * FROM inventoryfolders WHERE agentID = ?uuid", dbcon))
                                 {
                                     result.Parameters.AddWithValue("?uuid", parentFolder[0].Owner.ToString());
 
@@ -810,7 +816,8 @@ namespace OpenSim.Data.MySQL
                     dbcon.Open();
 
                     // System folders can never be deleted. Period.
-                    using (MySqlCommand cmd = new MySqlCommand("DELETE FROM inventoryfolders WHERE folderID=?uuid and type=-1", dbcon))
+                    using (MySqlCommand cmd = new MySqlCommand(
+                        "DELETE FROM inventoryfolders WHERE folderID=?uuid and type=-1", dbcon))
                     {
                         cmd.Parameters.AddWithValue("?uuid", folderID.ToString());
 
@@ -838,7 +845,8 @@ namespace OpenSim.Data.MySQL
                 {
                     dbcon.Open();
 
-                    using (MySqlCommand cmd = new MySqlCommand("DELETE FROM inventoryitems WHERE parentFolderID=?uuid", dbcon))
+                    using (MySqlCommand cmd = new MySqlCommand(
+                        "DELETE FROM inventoryitems WHERE parentFolderID=?uuid", dbcon))
                     {
                         cmd.Parameters.AddWithValue("?uuid", folderID.ToString());
 

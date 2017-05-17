@@ -268,6 +268,38 @@ namespace OpenSim.Data.MySQL
         /// <returns>For each asset: true if it exists, false otherwise</returns>
         public bool[] AssetsExist(UUID[] uuids)
         {
+            if (uuids.Length == 1)
+            {
+                bool[] result = new bool[1];
+
+                using (MySqlConnection conn = new MySqlConnection(m_ConnectionString))
+                {
+                    try
+                    {
+                        conn.Open();
+                    }
+                    catch (MySqlException e)
+                    {
+                        m_log.ErrorFormat("[FSASSETS]: Failed to open database: {0}", e.ToString());
+
+                        result[0] = false;
+                        return result;
+                    }
+
+                    using (MySqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = string.Format("select id from {1} where id = '{0}'", uuids[0], m_Table);
+
+                        using (MySqlDataReader dbReader = cmd.ExecuteReader())
+                        {
+                            result[0] = dbReader.HasRows;
+                            conn.Close();
+                            return result;
+                        }
+                    }
+                }
+            }
+
             if (uuids.Length == 0)
                 return new bool[0];
 
@@ -300,7 +332,7 @@ namespace OpenSim.Data.MySQL
                     {
                         while (dbReader.Read())
                         {
-                            UUID id = DBGuid.FromDB(dbReader["ID"]);
+                            UUID id = DBGuid.FromDB(dbReader["id"]);
                             exists.Add(id);
                         }
                     }

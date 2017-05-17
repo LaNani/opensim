@@ -518,8 +518,8 @@ namespace OpenSim.Data.MySQL
                 try
                 {
                     // Delete any existing association of this region with an estate.
-                     using (MySqlCommand cmd = dbcon.CreateCommand())
-                     {
+                    using (MySqlCommand cmd = dbcon.CreateCommand())
+                    {
                         cmd.Transaction = transaction;
                         cmd.CommandText = "delete from estate_map where RegionID = ?RegionID";
                         cmd.Parameters.AddWithValue("?RegionID", regionID);

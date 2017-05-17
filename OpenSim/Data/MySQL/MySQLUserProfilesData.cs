@@ -560,14 +560,8 @@ namespace OpenSim.Data.MySQL
             else
             {
                 remove = false;
-                query = "INSERT INTO usernotes VALUES (" 
-                    + "?UserId,"
-                    + "?TargetId,"
-                    + "?Notes )"
-                    + "ON DUPLICATE KEY "
-                    + "UPDATE "
-                    + "notes=?Notes"
-                    ;
+                query = "INSERT INTO usernotes VALUES (?UserId,?TargetId,?Notes) "
+                    + "ON DUPLICATE KEY UPDATE notes=?Notes";
             }
 
             try
@@ -601,7 +595,7 @@ namespace OpenSim.Data.MySQL
         #region Avatar Properties
         public bool GetAvatarProperties(ref UserProfileProperties props, ref string result)
         {
-            string query = "SELECT * FROM userprofile WHERE useruuid = ?Id";
+            const string query = "SELECT * FROM userprofile WHERE useruuid = ?Id";
 
             try
             {
@@ -650,7 +644,8 @@ namespace OpenSim.Data.MySQL
                                 props.PublishProfile = false;
                                 props.PublishMature = false;
 
-                                query = "INSERT INTO userprofile ("
+                                const string queryB = 
+                                    "INSERT INTO userprofile ("
                                     + "useruuid, "
                                     + "profilePartner, "
                                     + "profileAllowPublish, "
@@ -678,13 +673,12 @@ namespace OpenSim.Data.MySQL
                                     + "?profileImage, "
                                     + "?profileAboutText, "
                                     + "?profileFirstImage, "
-                                    + "?profileFirstText)"
-                                    ;
+                                    + "?profileFirstText)";
 
                                 dbcon.Close();
                                 dbcon.Open();
 
-                                using (MySqlCommand put = new MySqlCommand(query, dbcon))
+                                using (MySqlCommand put = new MySqlCommand(queryB, dbcon))
                                 {
                                     put.Parameters.AddWithValue("?userId", props.UserId.ToString());
                                     put.Parameters.AddWithValue("?profilePartner", props.PartnerId.ToString());
