@@ -410,25 +410,6 @@ namespace OpenSim.Data.MySQL
         /// <returns>For each asset: true if it exists, false otherwise</returns>
         public bool[] AssetsExist(UUID[] uuids)
         {
-            if (uuids.Length == 1)
-            {
-                using (MySqlConnection dbcon = new MySqlConnection(m_connectionString))
-                {
-                    dbcon.Open();
-                    using (MySqlCommand cmd = new MySqlCommand(
-                      string.Format("SELECT ID FROM assets WHERE ID = '{0}'", uuids[0]), dbcon))
-                    {
-                        using (MySqlDataReader dbReader = cmd.ExecuteReader())
-                        {
-                            bool[] result = new bool[1];
-                            result[0] = dbReader.HasRows;
-                            dbcon.Close();
-                            return result;
-                        }
-                    }
-                }
-            }
-
             if (uuids.Length == 0)
                 return new bool[0];
 
@@ -451,7 +432,6 @@ namespace OpenSim.Data.MySQL
                         }
                     }
                 }
-                dbcon.Close();
             }
 
             bool[] results = new bool[uuids.Length];

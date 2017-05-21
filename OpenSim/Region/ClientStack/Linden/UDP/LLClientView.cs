@@ -13466,7 +13466,10 @@ namespace OpenSim.Region.ClientStack.LindenUDP
 
             pack.TextureData = new RebakeAvatarTexturesPacket.TextureDataBlock();
             pack.TextureData.TextureID = textureID;
-            OutPacket(pack, ThrottleOutPacketType.Task);
+
+            // OutPacket(pack, ThrottleOutPacketType.Task);
+            // Lets not throttle this and see what happens.
+            OutPacket(pack, ThrottleOutPacketType.Unknown); 
         }
 
         public struct PacketProcessor

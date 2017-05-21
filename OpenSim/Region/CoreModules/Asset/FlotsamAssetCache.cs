@@ -541,16 +541,6 @@ namespace OpenSim.Region.CoreModules.Asset
             return asset;
         }
 
-        private void LogGet(string id, bool hit)
-        {
-            if (((m_LogLevel >= 1)) && (m_HitRateDisplay != 0) && (m_Requests % m_HitRateDisplay == 0))
-            {
-                m_log.InfoFormat("[FLOTSAM ASSET CACHE]: Cache Get :: {0} :: {1}", id, hit ? "Hit" : "Miss");
-
-                GenerateCacheHitReport().ForEach(l => m_log.InfoFormat("[FLOTSAM ASSET CACHE]: {0}", l));
-            }
-        }
-
         public bool Get(string id, out AssetBase asset)
         {
             asset = null;
@@ -564,58 +554,43 @@ namespace OpenSim.Region.CoreModules.Asset
             }
 
             asset = GetFromWeakReference(id);
-            if (asset != null)
+            if (asset != null && m_updateFileTimeOnCacheHit)
             {
-                if (m_updateFileTimeOnCacheHit)
-                {
-                    string filename = GetFileName(id);
-                    UpdateFileLastAccessTime(filename);
-                }
-
-                if (m_MemoryCacheEnabled)
-                    UpdateMemoryCache(id, asset);
-
-                LogGet(id, true);
-                return true;
+                string filename = GetFileName(id);
+                UpdateFileLastAccessTime(filename);
             }
 
-            if (m_MemoryCacheEnabled)
+            if (m_MemoryCacheEnabled && asset == null)
             {
                 asset = GetFromMemoryCache(id);
-                if (asset != null)
+                if(asset != null)
                 {
                     UpdateWeakReference(id,asset);
-
                     if (m_updateFileTimeOnCacheHit)
                     {
                         string filename = GetFileName(id);
                         UpdateFileLastAccessTime(filename);
                     }
-
-                    if (m_MemoryCacheEnabled)
-                        UpdateMemoryCache(id, asset);
-
-                    LogGet(id, true);
-                    return true;
                 }
             }
 
-            if (m_FileCacheEnabled)
+            if (asset == null && m_FileCacheEnabled)
             {
                 asset = GetFromFileCache(id);
-                if (asset != null)
-                {
-                    UpdateWeakReference(id, asset);
-
-                    if (m_MemoryCacheEnabled)
-                        UpdateMemoryCache(id, asset);
-
-                    LogGet(id, true);
-                    return true;
-                }
+                if(asset != null)
+                    UpdateWeakReference(id,asset);
             }
 
-            LogGet(id, false);
+            if (m_MemoryCacheEnabled && asset != null)
+                UpdateMemoryCache(id, asset);
+
+            if (((m_LogLevel >= 1)) && (m_HitRateDisplay != 0) && (m_Requests % m_HitRateDisplay == 0))
+            {
+                m_log.InfoFormat("[FLOTSAM ASSET CACHE]: Cache Get :: {0} :: {1}", id, asset == null ? "Miss" : "Hit");
+
+                GenerateCacheHitReport().ForEach(l => m_log.InfoFormat("[FLOTSAM ASSET CACHE]: {0}", l));
+            }
+
             return true;
         }
 

@@ -878,7 +878,7 @@ namespace OpenSim.Data.MySQL
             {
                 dbcon.Open();
 
-                const string command = "select * from `regionwindlight` where region_id = ?regionID";
+                string command = "select * from `regionwindlight` where region_id = ?regionID";
 
                 using (MySqlCommand cmd = new MySqlCommand(command))
                 {
@@ -1143,7 +1143,7 @@ namespace OpenSim.Data.MySQL
             {
                 dbcon.Open();
 
-                const string command = "select * from `regionenvironment` where region_id = ?region_id";
+                string command = "select * from `regionenvironment` where region_id = ?region_id";
 
                 using (MySqlCommand cmd = new MySqlCommand(command))
                 {

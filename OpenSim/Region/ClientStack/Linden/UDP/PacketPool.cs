@@ -117,32 +117,29 @@ namespace OpenSim.Region.ClientStack.LindenUDP
         {
             PacketsRequested++;
 
-            Packet packet;
-
-            if (!RecyclePackets)
-                return Packet.BuildPacket(type);
-
-            lock (pool)
+            if (RecyclePackets)
             {
-                if (!pool.ContainsKey(type) || pool[type] == null || (pool[type]).Count == 0)
+                lock (pool)
                 {
-//                    m_log.DebugFormat("[PACKETPOOL]: Building {0} packet", type);
-
-                    // Creating a new packet if we cannot reuse an old package
-                    packet = Packet.BuildPacket(type);
-                }
-                else
-                {
-//                    m_log.DebugFormat("[PACKETPOOL]: Pulling {0} packet", type);
-
-                    // Recycle old packages
-                    PacketsReused++;
-
-                    packet = pool[type].Pop();
+                    if (pool.ContainsKey(type))
+                    {
+                        if (pool[type] == null || (pool[type]).Count == 0)
+                        {
+                             // just skip this and go create a new packet
+                        }
+                        else
+                        {
+                            // Recycle old packages
+                            PacketsReused++;
+                            Packet packet = pool[type].Pop();
+                            return packet;
+                        }
+                    }
                 }
             }
 
-            return packet;
+            // Creating a new packet if we cannot reuse an old package
+            return Packet.BuildPacket(type);
         }
 
         private static PacketType GetType(byte[] bytes)
@@ -182,12 +179,14 @@ namespace OpenSim.Region.ClientStack.LindenUDP
 
 //            Array.Clear(zeroBuffer, 0, zeroBuffer.Length);
 
-            int i = 0;
             Packet packet = GetPacket(type);
             if (packet == null)
                 m_log.WarnFormat("[PACKETPOOL]: Failed to get packet of type {0}", type);
             else
+            {
+                int i = 0;
                 packet.FromBytes(bytes, ref i, ref packetEnd, zeroBuffer);
+            }
 
             return packet;
         }

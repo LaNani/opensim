@@ -1924,7 +1924,7 @@ namespace OpenSim.Region.Framework.Scenes
             // m_originRegionID is UUID.Zero; after, it's non-Zero.  The CompleteMovement sequence initiated from the
             // viewer (in turn triggered by the source region sending it a TeleportFinish event) waits until it's non-zero
 //            m_updateAgentReceivedAfterTransferEvent.WaitOne(10000);
-            int count = 50;
+            int count = 100;
             UUID originID = UUID.Zero;
 
             lock (m_originRegionIDAccessLock)
@@ -1936,7 +1936,7 @@ namespace OpenSim.Region.Framework.Scenes
                     originID = m_originRegionID;
 
                 m_log.DebugFormat("[SCENE PRESENCE]: Agent {0} waiting for update in {1}", client.Name, Scene.Name);
-                Thread.Sleep(200);
+                Thread.Sleep(100);
             }
 
             if (originID.Equals(UUID.Zero))
@@ -2456,7 +2456,9 @@ namespace OpenSim.Region.Framework.Scenes
             // This is irritating.  Really.
             if (!AbsolutePosition.IsFinite())
             {
-                RemoveFromPhysicalScene();
+                bool isphysical = PhysicsActor != null;
+                if(isphysical)
+                    RemoveFromPhysicalScene();
                 m_log.Error("[AVATAR]: NonFinite Avatar position detected... Reset Position. Mantis this please. Error #9999902");
 
                 m_pos = m_LastFinitePos;
@@ -2468,7 +2470,8 @@ namespace OpenSim.Region.Framework.Scenes
                     m_log.Error("[AVATAR]: NonFinite Avatar position detected... Reset Position. Mantis this please. Error #9999903");
                 }
 
-                AddToPhysicalScene(false);
+                if(isphysical)
+                    AddToPhysicalScene(false);
             }
             else
             {
@@ -4684,7 +4687,10 @@ namespace OpenSim.Region.Framework.Scenes
                 cAgent.agentCOF = COF;
                 cAgent.ActiveGroupID = ControllingClient.ActiveGroupId;
                 cAgent.ActiveGroupName = ControllingClient.ActiveGroupName;
-                cAgent.ActiveGroupTitle = Grouptitle;
+                if(Grouptitle == null)
+                    cAgent.ActiveGroupTitle = String.Empty;
+                else
+                    cAgent.ActiveGroupTitle = Grouptitle;
             }
         }
 
@@ -4880,6 +4886,7 @@ namespace OpenSim.Region.Framework.Scenes
             PhysicsActor.OnOutOfBounds += OutOfBoundsCall; // Called for PhysicsActors when there's something wrong
             PhysicsActor.SubscribeEvents(100);
             PhysicsActor.LocalID = LocalId;
+            PhysicsActor.SetAlwaysRun = m_setAlwaysRun;
         }
 
         private void OutOfBoundsCall(Vector3 pos)
