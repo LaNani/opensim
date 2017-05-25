@@ -143,7 +143,7 @@ namespace OpenSim
                 //Mono.Unix.Native.Signum signal = signals [index].Signum;
                 MainConsole.Instance.RunCommand("shutdown");
             }
-        });
+        });       
 #endif
 
         /// <summary>
@@ -165,6 +165,7 @@ namespace OpenSim
                     {
                         new Mono.Unix.UnixSignal(Mono.Unix.Native.Signum.SIGTERM)
                     };
+                    signal_thread.IsBackground = true;
                     signal_thread.Start();
                 }
                 catch (Exception e)
@@ -485,6 +486,12 @@ namespace OpenSim
                 RunCommandScript(m_shutdownCommandsFile);
             }
 
+            if (m_timedScript != "disabled")
+            {
+                m_scriptTimer.Dispose();
+                m_timedScript = "disabled";
+            }
+
             base.ShutdownSpecific();
         }
 
@@ -504,7 +511,8 @@ namespace OpenSim
         private void WatchdogTimeoutHandler(Watchdog.ThreadWatchdogInfo twi)
         {
             int now = Environment.TickCount & Int32.MaxValue;
-
+            if(twi.Thread.ThreadState == System.Threading.ThreadState.Stopped)
+                return;
             m_log.ErrorFormat(
                 "[WATCHDOG]: Timeout detected for thread \"{0}\". ThreadState={1}. Last tick was {2}ms ago.  {3}",
                 twi.Thread.Name,

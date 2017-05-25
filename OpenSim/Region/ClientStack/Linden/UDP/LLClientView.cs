@@ -62,7 +62,7 @@ namespace OpenSim.Region.ClientStack.LindenUDP
     /// Handles new client connections
     /// Constructor takes a single Packet and authenticates everything
     /// </summary>
-    public class LLClientView : IClientAPI, IClientCore, IClientIM, IClientChat, IClientInventory, IStatsCollector
+    public class LLClientView : IClientAPI, IClientCore, IClientIM, IClientChat, IClientInventory, IStatsCollector, IClientIPEndpoint
     {
         /// <value>
         /// Debug packet level.  See OpenSim.RegisterConsoleCommands() for more details.
@@ -13466,10 +13466,7 @@ namespace OpenSim.Region.ClientStack.LindenUDP
 
             pack.TextureData = new RebakeAvatarTexturesPacket.TextureDataBlock();
             pack.TextureData.TextureID = textureID;
-
-            // OutPacket(pack, ThrottleOutPacketType.Task);
-            // Lets not throttle this and see what happens.
-            OutPacket(pack, ThrottleOutPacketType.Unknown); 
+            OutPacket(pack, ThrottleOutPacketType.Task);
         }
 
         public struct PacketProcessor

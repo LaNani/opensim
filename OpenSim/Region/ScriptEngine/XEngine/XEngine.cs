@@ -827,6 +827,9 @@ namespace OpenSim.Region.ScriptEngine.XEngine
                 if (m_ScriptEngines.Contains(this))
                     m_ScriptEngines.Remove(this);
             }
+
+            lock(m_Scripts)
+                m_ThreadPool.Shutdown();
         }
 
         public object DoBackup(object o)
@@ -1076,6 +1079,7 @@ namespace OpenSim.Region.ScriptEngine.XEngine
                                         "[XEngine]: Started {0} scripts in {1}", scriptsStarted, m_Scene.Name);
                         }
                     }
+                    catch (System.Threading.ThreadAbortException) { }
                     catch (Exception e)
                     {
                         m_log.Error(

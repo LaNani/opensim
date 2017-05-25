@@ -1924,7 +1924,7 @@ namespace OpenSim.Region.Framework.Scenes
             // m_originRegionID is UUID.Zero; after, it's non-Zero.  The CompleteMovement sequence initiated from the
             // viewer (in turn triggered by the source region sending it a TeleportFinish event) waits until it's non-zero
 //            m_updateAgentReceivedAfterTransferEvent.WaitOne(10000);
-            int count = 100;
+            int count = 50;
             UUID originID = UUID.Zero;
 
             lock (m_originRegionIDAccessLock)
@@ -1936,7 +1936,7 @@ namespace OpenSim.Region.Framework.Scenes
                     originID = m_originRegionID;
 
                 m_log.DebugFormat("[SCENE PRESENCE]: Agent {0} waiting for update in {1}", client.Name, Scene.Name);
-                Thread.Sleep(100);
+                Thread.Sleep(200);
             }
 
             if (originID.Equals(UUID.Zero))
